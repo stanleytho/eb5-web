@@ -1,18 +1,21 @@
-// Verifies Turnstile token, then emails the message via Resend.
-// Env vars (Vercel): TURNSTILE_SECRET_KEY, RESEND_API_KEY, CONTACT_TO_EMAIL
+// Optionally verifies Turnstile token, then emails the message via Resend.
+// Env vars (Vercel): TURNSTILE_SECRET_KEY (optional), RESEND_API_KEY, CONTACT_TO_EMAIL
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const { name, email, phone, message, token } = req.body || {};
-  if (!name || !email || !message || !token) {
+  if (!name || !email || !message || (process.env.TURNSTILE_SECRET_KEY && !token)) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const check = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: token }),
-  }).then((r) => r.json());
-  if (!check.success) return res.status(400).json({ error: 'Human check failed' });
+  // Turnstile is optional: only enforced once TURNSTILE_SECRET_KEY is set.
+  if (process.env.TURNSTILE_SECRET_KEY) {
+    const check = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: token }),
+    }).then((r) => r.json());
+    if (!check.success) return res.status(400).json({ error: 'Human check failed' });
+  }
 
   const send = await fetch('https://api.resend.com/emails', {
     method: 'POST',

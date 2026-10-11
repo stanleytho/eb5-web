@@ -36,6 +36,6 @@ form.addEventListener('submit', async (e) => {
     status.textContent = form.dataset.err;
   } finally {
     button.disabled = false;
-    turnstile.reset();
+    window.turnstile?.reset();
   }
 });
