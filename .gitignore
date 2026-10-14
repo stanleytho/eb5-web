@@ -4,3 +4,6 @@ node_modules
 .tokensave/
 .serena/
 .claude/
+.DS_Store
+videos/*.mp4
+videos/remotion/out/
